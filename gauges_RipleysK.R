@@ -1,4 +1,4 @@
-frylibrary('spatstat')
+library('spatstat')
 library('dplyr')
 
 # Load data and metadata
