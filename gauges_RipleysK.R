@@ -1,4 +1,4 @@
-library('spatstat')
+frylibrary('spatstat')
 library('dplyr')
 
 # Load data and metadata
@@ -45,6 +45,11 @@ plot(gauges_ks, main="Kolmogorov-Smirnoff")
 gauges_fv <- Kest(gauges_ppp, correction=c("best"), var.approx=TRUE)
 plot(gauges_fv, main="Ripley's K Test")
 plot(envelope(gauges_ppp, Kest, 49), main="Ripley's K with Envelope")
+# L test
 gauges_l <- Lest(gauges_ppp, correction="Ripley")
 plot(gauges_l, main="Ripley's L function")
 plot(envelope(gauges_ppp, Lest, 49), main="Ripley's L with Envelope")
+
+# L test with varying Dmax, i.e. global envelopes
+# 5% confidence throughout 
+plot(envelope(gauges_ppp, Lest, 19, global=T), main="Ripley's L with Envelope")
