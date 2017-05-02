@@ -163,11 +163,11 @@ aspect_t <- SpatialPointsDataFrame(aspect_t, coords=xy_coords,
 
 # Set up colors for t-values of elevation
 clrs2 <- rep("xx", nrow(elev_t@data))
-clrs2[elev_t$t.value<=2] <- "red" 
-clrs2[(elev_t$t.value>=-2) & (elev_t$t.value<=1)] <- "orange"
-clrs2[(elev_t$t.value>=-1) & (elev_t$t.value<1)] <- "green"
-clrs2[(elev_t$t.value>=1) & (elev_t$t.value<2)] <- "orange"
-clrs2[elev_t$t.value>2] <- "red" 
+clrs2[elev_t$t.value <= -2] <- "red" 
+clrs2[(elev_t$t.value > -2) & (elev_t$t.value <= -1)] <- "orange"
+clrs2[(elev_t$t.value > -1) & (elev_t$t.value <= 1)] <- "green"
+clrs2[(elev_t$t.value > 1) & (elev_t$t.value <= 2)] <- "orange"
+clrs2[elev_t$t.value > 2] <- "red" 
 
 # Plot both coefficients and t-values side by side
 opar <- par(mfrow=c(1,2))
@@ -180,11 +180,11 @@ legend("right", legend=c("Min","-2","0","2","Max"),
        fill=c("red","orange","green","orange","red"), cex=0.6 )
 
 # Set up colors for t-values of aspect
-clrs2[aspect_t$t.value<=2] <- "red" 
-clrs2[(aspect_t$t.value>=-2) & (aspect_t$t.value<=1)] <- "orange"
-clrs2[(aspect_t$t.value>=-1) & (aspect_t$t.value<1)] <- "green"
-clrs2[(aspect_t$t.value>=1) & (aspect_t$t.value<2)] <- "orange"
-clrs2[aspect_t$t.value>2] <- "red" 
+clrs2[aspect_t$t.value <= -2] <- "red" 
+clrs2[(aspect_t$t.value > -2) & (aspect_t$t.value <= -1)] <- "orange"
+clrs2[(aspect_t$t.value > -1) & (aspect_t$t.value <= 1)] <- "green"
+clrs2[(aspect_t$t.value > 1) & (aspect_t$t.value <= 2)] <- "orange"
+clrs2[aspect_t$t.value > 2] <- "red" 
 
 opar <- par(mfrow=c(1,2))
 plot(gauge_results, pch=15, col="purple", cex=gauge_results$aspect*200,
