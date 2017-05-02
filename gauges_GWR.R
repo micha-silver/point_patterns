@@ -58,14 +58,14 @@ class(gauges)
 # Show gauges on a map
 gadm_1 <- readRDS('GIS/DEU_adm1.rds')
 #gadm_2 <- readRDS('GIS/DEU_adm2.rds')
-png('bavaria_gauges.png', width=600, height=600)
+png('bavaria_gauges.png', width=800, height=800)
 bg <- gmap('Bavaria')
 # Reproject gadm borders and gauges to EPSG:3857
 gadm_1_reproj <- spTransform(gadm_1, bg@crs)
 gauges_reproj <- spTransform(gauges, bg@crs)
 plot(bg, width=3, height=4)
 plot(gadm_1_reproj, fill=F, border='black', lwd=2, add=T)
-plot(gauges_reproj, pch=18, col="blue", cex=gauges$obs_precip/5, add=T)
+plot(gauges_reproj, pch=18, col="blue", cex=gauges$obs_precip/2.5, add=T)
 title(main="Rain Gauges - Bavaria", sub="11/01/2017")
 dev.off()
 
@@ -152,27 +152,45 @@ plot(gadm_1, fill=F, border='black', lwd=2, add=T)
 # Plot t-values for both coefficients
 # t-value = coefficient / standard error
 # If it's around 0, highly significant, > +- 4 not significant
-elev_t <- gauge_results$elevation / gauge_results$elevation_se
-aspect_t <- gauge_results$aspect / gauge_results$aspect_se
-gauge_signif <- cbind(gauge_results, elev_t, aspect_t)
-#gauge_signif <- SpatialPointsDataFrame(gauge_signif, 
-#                                        coords=xy_coords, 
-#                                        proj4string = proj_wgs84)
+elev_t <- as.data.frame(gauge_results$elevation / gauge_results$elevation_se)
+colnames(elev_t) <- "t.value"
+elev_t <- SpatialPointsDataFrame(elev_t, coords=xy_coords, 
+                                 proj4string = proj_wgs84)
+aspect_t <- as.data.frame(gauge_results$aspect / gauge_results$aspect_se)
+colnames(aspect_t) <- "t.value"
+aspect_t <- SpatialPointsDataFrame(aspect_t, coords=xy_coords,
+                                   proj4string = proj_wgs84)
+
+# Set up colors for t-values of elevation
+clrs2 <- rep("xx", nrow(elev_t@data))
+clrs2[elev_t$t.value<=2] <- "red" 
+clrs2[(elev_t$t.value>=-2) & (elev_t$t.value<=1)] <- "orange"
+clrs2[(elev_t$t.value>=-1) & (elev_t$t.value<1)] <- "green"
+clrs2[(elev_t$t.value>=1) & (elev_t$t.value<2)] <- "orange"
+clrs2[elev_t$t.value>2] <- "red" 
+
+# Plot both coefficients and t-values side by side
 opar <- par(mfrow=c(1,2))
-clrs2=c("green","red","purple","red","green") 
-breaks=c(min(gauge_signif$elev_t),-4,0,4,max(gauge_signif$elev_t)) 
-plot(gauge_signif, pch=17, col="brown", cex=gauge_results$elevation*100,
+plot(gauge_results, pch=17, col="brown", cex=gauge_results$elevation*100,
      main="Elevation Coefficient")
 plot(gadm_1, fill=F, border='black', lwd=2, add=T)
-plot(gauge_signif, pch=16, col=clrs2, cex=2,
-     main="Elevation t-value")
+plot(elev_t, pch=16, col=clrs2, cex=2, main="Elevation t-value")
 plot(gadm_1, fill=F, border='black', lwd=2, add=T)
+legend("right", legend=c("Min","-2","0","2","Max"), 
+       fill=c("red","orange","green","orange","red"), cex=0.6 )
+
+# Set up colors for t-values of aspect
+clrs2[aspect_t$t.value<=2] <- "red" 
+clrs2[(aspect_t$t.value>=-2) & (aspect_t$t.value<=1)] <- "orange"
+clrs2[(aspect_t$t.value>=-1) & (aspect_t$t.value<1)] <- "green"
+clrs2[(aspect_t$t.value>=1) & (aspect_t$t.value<2)] <- "orange"
+clrs2[aspect_t$t.value>2] <- "red" 
 
 opar <- par(mfrow=c(1,2))
-breaks=c(min(gauge_signif$aspect_t),-4,0,4,max(gauge_signif$aspect_t)) 
-plot(gauge_signif, pch=15, col="purple", cex=gauge_results$aspect*200,
+plot(gauge_results, pch=15, col="purple", cex=gauge_results$aspect*200,
      main="Aspect Coefficient")
 plot(gadm_1, fill=F, border='black', lwd=2, add=T)
-plot(gauge_signif, pch=16, col=clrs2, cex=2,
-     main="Aspect t-value")
+plot(aspect_t, pch=16, col=clrs2, cex=2, main="Aspect t-value")
 plot(gadm_1, fill=F, border='black', lwd=2, add=T)
+legend("right", legend=c("Min","-2","0","2","Max"), 
+       fill=c("red","orange","green","orange","red"), cex=0.6 )
