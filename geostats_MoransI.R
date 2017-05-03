@@ -1,9 +1,6 @@
-library('spatstat')
 library('dplyr')
-library('sp')
 library('spdep')
-library('dismo')
-
+library('geoR')
 # ---------------------------------
 # Load data,
 # ---------------------------------
@@ -44,10 +41,12 @@ gauges <- filter(gauges, obs_precip>=0)
 
 # Weights matrix
 distances <- as.matrix(dist(gauges))
-diag(distances) <- 0
 inv_dist = 1/distances
+diag(inv_dist) <- 0
 inv_dist_squared <- 1/distances^2
+print(inv_dist[1:5,1:5])
 wts <- mat2listw(inv_dist)
+wts_squared <- mat2listw(inv_dist_squared)
 
 # Prepare SPDF
 xy_coords <- cbind(gauges$longitude, gauges$latitude) 
@@ -55,16 +54,19 @@ proj_wgs84 = CRS("+init=epsg:4326")
 coordinates(gauges) <- xy_coords
 proj4string(gauges) <- proj_wgs84
 
-# Read in aspect raster
-aspect_bavaria <- raster('GIS/aspect_bavaria.tif')
-# Extract aspect from raster at gauge locations, 
-# and add values to new data column
-gauges$aspect <- extract(aspect_bavaria, gauges)
-# Now we have three possible predictors: elevation, latitude, aspect
-# dependant variable is obs_precip
-head(gauges$aspect)
-
 # Moran's I
-moran.test(gauges$obs_precip,w)
+moran.test(gauges$obs_precip, wts)
+
 # Geary's C
-geary.test(gauges$obs_precip, w, zero.policy = T)
+geary.test(gauges$obs_precip, wts)
+
+# Variogram and Envelope
+coord_matrix <- cbind(gauges$longitude, gauges$latitude)
+vg <- variog(coords=coord_matrix, 
+             data=gauges$obs_precip)
+plot(vg, pch=16, col="blue")
+vg_envel <- variog.mc.env(coords=coord_matrix, 
+                          data=gauges$obs_precip, 
+                          obj.var=vg, 
+                          nsim=999)
+plot(vg, envelope=vg_envel, pch=16, col="blue")
