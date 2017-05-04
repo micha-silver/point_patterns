@@ -28,8 +28,6 @@ meta_cols <- c('station_id','from_date','to_date','elevation',
                'latitude','longitude',
                'stn_name','province')
 gauge_metadata <- read.csv('gauge_data/gauge_metadata.csv', col.names=meta_cols)
-#head(gauge_data)
-#head(gauge_metadata)
 
 # Get one day (or hour), and attach metadata
 gauge_data_filtered <- filter(gauge_data, date_time==date_str)
@@ -43,10 +41,10 @@ gauges <- filter(gauges, obs_precip>=0)
 distances <- as.matrix(dist(gauges))
 inv_dist = 1/distances
 diag(inv_dist) <- 0
-inv_dist_squared <- 1/distances^2
+#inv_dist_squared <- 1/distances^2
 print(inv_dist[1:5,1:5])
 wts <- mat2listw(inv_dist)
-wts_squared <- mat2listw(inv_dist_squared)
+#wts_squared <- mat2listw(inv_dist_squared)
 
 # Prepare SPDF
 xy_coords <- cbind(gauges$longitude, gauges$latitude) 
@@ -55,7 +53,19 @@ coordinates(gauges) <- xy_coords
 proj4string(gauges) <- proj_wgs84
 
 # Moran's I
-moran.test(gauges$obs_precip, wts)
+I <- moran.test(gauges$obs_precip, wts)
+print(I)
+
+I_mc <- moran.mc(gauges$obs_precip, wts, nsim=9999)
+# Get value of 1.96 Stdev of the Monte Carlo distribution
+sd2 <- 1.96 * sd(I_mc$res)
+print(sd2)
+hist(I_mc$res, xlab="Monte Carlo runs of Moran's I", 
+     breaks=50, col="lightgrey")
+abline(v=I$estimate[1], col="red", lwd=3)
+abline(v=I$estimate[2], col="orange", lwd=2)
+abline(v=sd2, col="grey", lwd=2, lty="dashed")
+abline(v=-sd2, col="steelblue4", lwd=2, lty="dashed")
 
 # Geary's C
 geary.test(gauges$obs_precip, wts)
