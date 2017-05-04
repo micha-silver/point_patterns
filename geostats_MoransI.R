@@ -59,7 +59,6 @@ print(I)
 I_mc <- moran.mc(gauges$obs_precip, wts, nsim=9999)
 # Get value of 1.96 Stdev of the Monte Carlo distribution
 sd2 <- 1.96 * sd(I_mc$res)
-print(sd2)
 hist(I_mc$res, xlab="Monte Carlo runs of Moran's I", 
      breaks=50, col="lightgrey")
 abline(v=I$estimate[1], col="red", lwd=3)
