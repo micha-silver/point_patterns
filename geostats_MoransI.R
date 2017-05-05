@@ -67,7 +67,7 @@ abline(v=sd2, col="grey", lwd=2, lty="dashed")
 abline(v=-sd2, col="steelblue4", lwd=2, lty="dashed")
 
 # Geary's C
-geary.test(gauges$obs_precip, wts)
+C <- geary.test(gauges$obs_precip, wts)
 
 # Variogram and Envelope
 coord_matrix <- cbind(gauges$longitude, gauges$latitude)
