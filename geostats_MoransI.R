@@ -55,16 +55,18 @@ proj4string(gauges) <- proj_wgs84
 # Moran's I
 I <- moran.test(gauges$obs_precip, wts)
 print(I)
+I_stat <- I$estimate[1]
+I_expect <- I$estimate[2]
 
 I_mc <- moran.mc(gauges$obs_precip, wts, nsim=9999)
 # Get value of 1.96 Stdev of the Monte Carlo distribution
 sd2 <- 1.96 * sd(I_mc$res)
 hist(I_mc$res, xlab="Monte Carlo runs of Moran's I", 
      breaks=50, col="lightgrey")
-abline(v=I$estimate[1], col="red", lwd=3)
-abline(v=I$estimate[2], col="orange", lwd=2)
-abline(v=sd2, col="grey", lwd=2, lty="dashed")
-abline(v=-sd2, col="steelblue4", lwd=2, lty="dashed")
+abline(v=I_stat, col="red", lwd=3)
+abline(v=I_expect, col="orange", lwd=2)
+abline(v=sd2+I_expect, col="steelblue4", lwd=2, lty="dashed")
+abline(v=-sd2+I_expect, col="steelblue4", lwd=2, lty="dashed")
 
 # Geary's C
 C <- geary.test(gauges$obs_precip, wts)
@@ -79,3 +81,12 @@ vg_envel <- variog.mc.env(coords=coord_matrix,
                           obj.var=vg, 
                           nsim=999)
 plot(vg, envelope=vg_envel, pch=16, col="blue")
+
+# Limit max distance
+vg2 <- variog(coords=coord_matrix, 
+             data=gauges$obs_precip, max.dist=1.5)
+# Run 999 Monte Carlo simulations
+vg_envel <- variog.mc.env(coords=coord_matrix, 
+                          data=gauges$obs_precip, 
+                          obj.var=vg2, 
+                          nsim=9999)
