@@ -6,7 +6,7 @@ library('dplyr')
 # ---------------------------------
 # Load data and metadata
 setwd(paste0('/home/micha/Studies/Courses',
-             '/Geostatistics-Tal/Final Project/'))
+             '/Geostatistics-Tal/Project/'))
 
 
 # WHich data interval?
