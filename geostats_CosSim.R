@@ -114,11 +114,11 @@ gauges <- merge(gauges, cos_sim2, by='station_id', all.y=TRUE)
 png('Rsq_CosSim1.png', width=1200, height=800)
 map1 <- ggmap(bavaria_map) + 
   geom_point(data=gauges, aes(x=longitude, y=latitude, colour=Rsquared1), 
-              size=3) +
+              size=4) +
   scale_color_gradientn(colours = clrs)
 map2 <- ggmap(bavaria_map) + 
   geom_point(data=gauges, aes(x=longitude, y=latitude, colour=CosSim1), 
-             size=3) +
+             size=4) +
   scale_color_gradientn(colours = clrs)
 grid.arrange(map1, map2, nrow=1)
 dev.off()
@@ -127,11 +127,11 @@ dev.off()
 png('Rsq_CosSim2.png', width=1200, height=800)
 map3 <- ggmap(bavaria_map) + 
   geom_point(data=gauges, aes(x=longitude, y=latitude, colour=Rsquared2), 
-             size=3) +
+             size=4) +
   scale_color_gradientn(colours = clrs)
 map4 <- ggmap(bavaria_map) + 
   geom_point(data=gauges, aes(x=longitude, y=latitude, colour=CosSim2), 
-             size=3) +
+             size=4) +
   scale_color_gradientn(colours = clrs)
 grid.arrange(map3, map4, nrow=1)
 dev.off()
