@@ -59,10 +59,10 @@ ewdim <- ceiling((maxx - minx)/0.01)
 gauges_idw <- idw(gauges_ppp, dimyx=c(nsdim, ewdim))
 
 clrs <- brewer.pal(8,'BuPu')
-opar <- par(pch=3, col="grey30", cex=0.5, lwd=1)
+opar <- par(pch=4, col="grey30", cex=0.5, lwd=1)
 plot(gauges_idw, col=clrs)
 plot(gadm_1, border='black', add=T)
-plot(gauges, add=T)
+points(gauges)
 
 # Get IDW values at original points for comparison
 gauges_idw_pts <- extract(raster(gauges_idw), gauges)
