@@ -2,6 +2,8 @@ library('dplyr')
 library('spatstat')
 library('spdep')
 library('geoR')
+library('raster')
+library('RColorBrewer')
 #library('gstat')
 
 # Setup
@@ -44,25 +46,27 @@ gauges_marks <- gauges$obs_precip
 gauges_ppp <- ppp(gauges$longitude, gauges$latitude, 
                   window=gauges_owin,
                   marks=gauges_marks)
-class(gauges_ppp)
+#class(gauges_ppp)
 
 # Set dimensions
 minx <- min(gauges$longitude)
 maxx <- max(gauges$longitude)
 miny <- min(gauges$latitude)
 maxy <- max(gauges$latitude)
-nsdim <- as.integer((maxy - miny)/0.01)
-ewdim <- as.integer((maxx - minx)/0.01)
-gauges_idw <- idw(gauges_ppp, dimyx=c(nsdim, ewdim))
-plot(gauges_idw)
-plot(gadm_1, fill=F, border='black', lwd=1, add=T)
-# Get IDW values at original points for comparison
-gauges_idw2 <- idw(gauges_ppp, at="points")
-gauges_idw_ppp <- ppp(gauges$longitude, gauges$latitude, 
-                      window=gauges_owin, 
-                      marks=gauges_idw2)
+nsdim <- ceiling((maxy - miny)/0.01)
+ewdim <- ceiling((maxx - minx)/0.01)
 
-rmse_idw <- sqrt(mean((gauges_ppp$marks - gauges_idw_ppp$marks)^2))
+gauges_idw <- idw(gauges_ppp, dimyx=c(nsdim, ewdim))
+
+clrs <- brewer.pal(8,'BuPu')
+opar <- par(pch=3, col="grey30", cex=0.5, lwd=1)
+plot(gauges_idw, col=clrs)
+plot(gadm_1, border='black', add=T)
+plot(gauges, add=T)
+
+# Get IDW values at original points for comparison
+gauges_idw_pts <- extract(raster(gauges_idw), gauges)
+rmse_idw <- sqrt(mean((gauges$obs_precip - gauges_idw_pts)^2))
 print(rmse_idw)
 
 # Variogram and Envelope
@@ -98,5 +102,15 @@ gauges_ok <- krige.conv(coords=coord_matrix,
                         data=gauges$obs_precip, 
                         krige = krige.control(cov.pars=krige_params), 
                         locations = grd)
-image(gauges_ok)
+# Plot krige raster
+image(gauges_ok, col=clrs)
 plot(gadm_1, fill=F, border='black', lwd=1, add=T)
+
+# Check RMSE with original points
+gauges_ok_rast <- raster(xmn=minx, xmx=maxx, 
+                         ymn=miny, ymx=maxy, 
+                         nrows=nsdim, ncols=ewdim, 
+                         vals=gauges_ok$predict)
+gauges_ok_pts <- extract(gauges_ok_rast, gauges)
+rmse_ok <- sqrt(mean((gauges$obs_precip - gauges_ok_pts)^2))
+print(rmse_ok)
