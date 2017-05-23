@@ -58,11 +58,13 @@ ewdim <- ceiling((maxx - minx)/0.01)
 
 gauges_idw <- idw(gauges_ppp, dimyx=c(nsdim, ewdim))
 
+png('gauges_idw.png', width=800, height=800)
 clrs <- brewer.pal(8,'BuPu')
-opar <- par(pch=4, col="grey30", cex=0.5, lwd=1)
+opar <- par(pch=4, col="grey30", cex=0.7, lwd=1)
 plot(gauges_idw, col=clrs)
 plot(gadm_1, border='black', add=T)
 points(gauges)
+dev.off()
 
 # Get IDW values at original points for comparison
 gauges_idw_pts <- extract(raster(gauges_idw), gauges)
@@ -94,9 +96,14 @@ vg_fit_gau <- variofit(vg, ini.cov.pars=krige_params,
                        cov.model = "gaussian",
                        fix.nugget = F, nugget = 3)
 lines.variomodel(vg_fit_exp, col="red")
-lines.variomodel(vg_fit_sph, col="orange")
-lines.variomodel(vg_fit_gau, col="magenta")
+lines.variomodel(vg_fit_sph, col="green")
+lines.variomodel(vg_fit_gau, col="blue")
+lclrs <- c('red','blue','green')
+lgnd <- c('Exponential','Sphere','Gauss')
+legend('bottomright', col=lclrs, legend=lgnd, lwd=2, cex=0.7)
 
+# Perform Kriging
+#----------------------------------------
 grd <- expand.grid(seq(minx,maxx,0.01), seq(miny,maxy,0.01))
 gauges_ok <- krige.conv(coords=coord_matrix, 
                         data=gauges$obs_precip, 
