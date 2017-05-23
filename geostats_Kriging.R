@@ -100,7 +100,7 @@ lines.variomodel(vg_fit_sph, col="green")
 lines.variomodel(vg_fit_gau, col="blue")
 lclrs <- c('red','blue','green')
 lgnd <- c('Exponential','Sphere','Gauss')
-legend('bottomright', col=lclrs, legend=lgnd, lwd=2, cex=0.7)
+legend('bottomright', col=lclrs, legend=lgnd, lwd=2, cex=0.8)
 
 # Perform Kriging
 #----------------------------------------
