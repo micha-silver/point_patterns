@@ -42,7 +42,7 @@ for (i in 1:num_links) {
   link_data[[i]] <-  cml_daily
 } 
 
-# Convwert lists to DF
+# Convert lists to DF
 link_meta <- do.call(rbind, link_meta)
 link_data <- do.call(rbind, link_data)
 H5close()

@@ -2,9 +2,9 @@ library('dplyr')
 library('spatstat')
 library('spdep')
 library('geoR')
+#library(gstat)
 library('raster')
 library('RColorBrewer')
-#library('gstat')
 
 # Setup
 #----------------------------------------
