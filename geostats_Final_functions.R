@@ -16,7 +16,7 @@ plot_map <- function(cities, gadm_1, gauge_data, link_data) {
  
   # Plot links and gauges
   outpng <- 'Output/gauges_links_map.png'
-  #png(outpng, width=800, height=600)
+  png(outpng, width=800, height=600)
   orig_par <- par()
   plot(link_data, col="red", main="Bavaria - Links and Gauges",
        pch=18, cex=1.6)
@@ -31,7 +31,7 @@ plot_map <- function(cities, gadm_1, gauge_data, link_data) {
   scalebar(40000, type="bar", xy=c(4450000,2700000),
            divs=4, cex=0.9)
   par(orig_par)
-  #dev.off()
+  dev.off()
   
 }
 
@@ -82,7 +82,7 @@ calculate_moran <- function(links_1day, datestr) {
   sd2 <- 1.96 * sd(Moran_I_mc$res)
   
   # Create Histogram plot
-  #png('Output/Morans_histogram.png', width=800, height=800)
+  png('Output/Morans_histogram.png', width=800, height=800)
   title <- paste("Moran's I - Distribution of Monte Carlo Simulations", datestr)
   hist(Moran_I_mc$res, xlab="Monte Carlo runs of Moran's I", 
        breaks=50, col="lightgrey", main=title)
@@ -95,7 +95,7 @@ calculate_moran <- function(links_1day, datestr) {
   lgnd <- c('I statistic','Expected Value','2 Std Dev')
   legend('topright', col=lclrs, legend=lgnd, 
          lwd=2, cex=0.9)
-  #dev.off()
+  dev.off()
   return(I_stat)
 }
 
@@ -123,7 +123,7 @@ prepare_variogram <- function(links_1day, datestr) {
   
   # Plot variogram and models
   outpng <- paste0("Output/variogram_", datestr, ".png")
-  #png(outpng, width=600, height=400)
+  png(outpng, width=600, height=400)
   y_upper <- max(vg$gamma)*1.1
   x_upper <- max(vg$dist)*1.1
   title <- paste("Variogram_",datestr)
@@ -138,7 +138,7 @@ prepare_variogram <- function(links_1day, datestr) {
   lgnd <- c('Manual fit','Auto')
   legend('bottomright', col=lclrs, legend=lgnd, lwd=2, lty=c(1,4,1,2), cex=1.2)
   par(orig_par)
-  #dev.off()
+  dev.off()
   # Return the fitted model 
   return(vg_fit_man)
 }
@@ -177,13 +177,13 @@ perform_ok <- function(links_1day, vg_fit, gauges_1day, grd, datestr) {
   clrs <- brewer.pal(8,'BuPu')
   title <- paste("Ordinary Kriging Interpolation ", datestr)
   outpng <- paste0("Output/OK_interp_", links_1day$date_time[1], ".png")
-  #png(outpng, width=800, height=600)
+  png(outpng, width=800, height=600)
   orig_par <- par()
   plot(OK_grid, col=clrs, main=title)
   plot(links_1day, col="red", pch=18, cex=1.2, add=T)
   plot(gadm_1, border='black', lwd=1, add=T)
   par(orig_par)
-  #dev.off()
+  dev.off()
   
   # Kriging at gauge locations
   OK_gauges <- krige(rain_rate~1, 
@@ -198,27 +198,30 @@ perform_ok <- function(links_1day, vg_fit, gauges_1day, grd, datestr) {
                            "x_coord"=OK_gauges@coords[,1], 
                            "y_coord"=OK_gauges@coords[,2])
   OK_results <- merge(gauges_obs, links_pred, by=c('x_coord', 'y_coord'))
-
-  corrcoef <- cor(OK_results$pred, OK_results$obs_precip)
-  print(paste("Correlation Coefficient Gauge Observations vs OK: ", corrcoef))
-
-  outpng <- paste0("Output/OK_Scatter_", links_1day$date_time[1], ".png")
-  title <- paste("OK vs Observed Precipitation ", datestr)
-  #png(outpng, width=800, height=600)
-  plot(OK_results$pred~OK_results$obs_precip, main=title, 
-       xlab="Observed", ylab="OK prediction", pch=16, col="blue")
-  abline(lm(OK_results$pred~OK_results$obs_precip), col="red")
-  legend("topleft", paste("Correlation: ", round(corrcoef,3)))
-  par(orig_par)
-  #dev.off()
   
   return(OK_results)
 }
 
-perform_ked <- function(links_1day, gauges_1day, radar_file, grd, datestr) {
-  # Kriging with External Drift
-  # use radar values as external 
-  # Get the radar raster (AAI grid), reproject and clip to links region
+
+OK_scatter <- function(OK_results) {
+  corrcoef <- cor(OK_results$pred, OK_results$obs_precip)
+  print(paste("Correlation Coefficient Gauge Observations vs OK: ", corrcoef))
+  
+  outpng <- paste0("Output/OK_Scatter_", links_1day$date_time[1], ".png")
+  title <- paste("OK vs Observed Precipitation ", datestr)
+  png(outpng, width=800, height=600)
+  plot(OK_results$pred~OK_results$obs_precip, main=title, 
+       xlab="Observed", ylab="OK prediction", pch=16, col="blue")
+  abline(lm(OK_results$pred~OK_results$obs_precip), col="red")
+  legend("topleft", paste("Correlation: ", round(corrcoef,3)),
+         cex=1.1, bty="n")
+  dev.off()
+}
+  
+  
+load_radar <- function(datestr, grd) {
+  # Load hourly radar (AAI format), crop to extent of grid and plot
+  radar_file <- paste0(radar_dir,'rw_',gsub('-','',datestr), '.asc')
   print(paste("Loading RADOLAN file:", radar_file))
   radar <- raster(radar_file)
   radar <- projectRaster(radar, res=1000, crs=proj_laea)
@@ -227,15 +230,18 @@ perform_ked <- function(links_1day, gauges_1day, radar_file, grd, datestr) {
   # Plot radar
   outpng <- paste0("Output/Radar_", links_1day$date_time[1], ".png")
   title <- paste("Radar rain rate ", datestr)
-  orig_par <- par()
-  #png(outpng, width=800, height=600)
+  png(outpng, width=800, height=600)
   clrs <- brewer.pal(8,'YlGnBu')
   plot(radar, col=clrs, main=title)
   plot(links_1day, col="red", pch=18, cex=0.8, add=T)
   plot(gadm_1, border='black', lwd=1, add=T)
-  #dev.off()
-  par(orig_par)
+  dev.off()
+  return(radar)   
+}
 
+perform_ked <- function(links_1day, gauges_1day, radar, grd, datestr) {
+  # Kriging with External Drift
+  # use radar values as external 
   # First: Remove duplicated locations!
   zdist <- zerodist(links_1day)[,1]
   if (length(zdist)>0) {
@@ -257,12 +263,11 @@ perform_ked <- function(links_1day, gauges_1day, radar_file, grd, datestr) {
   clrs <- brewer.pal(8,'BuPu')
   outpng <- paste0("Output/KED_interp_", links_1day$date_time[1], ".png")
   title <- paste("Kriging with External Drift Interpolation ", datestr)
-  #png(outpng, width=800, height=600)
+  png(outpng, width=800, height=600)
   plot(KED_grid, col=clrs, main=title)
   plot(links_1day, col="red", pch=18, cex=1.2, add=T)
   plot(gadm_1, border='black', lwd=1, add=T)
-  par(orig_par)
-  #dev.off()
+  dev.off()
   
   # Kriging at gauge locations
   # Add attribute column "radar_precip"  to the gauges SPDF
@@ -279,18 +284,39 @@ perform_ked <- function(links_1day, gauges_1day, radar_file, grd, datestr) {
                            "x_coord"=KED_gauges@coords[,1], 
                            "y_coord"=KED_gauges@coords[,2])
   KED_results <- merge(gauges_obs, links_pred, by=c('x_coord', 'y_coord'))
+  return(KED_results)
+}
 
+KED_scatter <- function(KED_results, datestr) {
+  # Scatter plot of KED vs gauge observations
   corrcoef <- cor(KED_results$pred, KED_results$obs_precip)
   print(paste("Correlation Coefficient Gauge Observations vs KED: ", corrcoef))
   title <- paste("KED vs Observed Precipitation", datestr)
-  outpng <- paste0("Output/KED_Scatter_", links_1day$date_time[1], ".png")
-  #png(outpng, width=800, height=600)
+  outpng <- paste0("Output/KED_Scatter_", datestr, ".png")
+  png(outpng, width=800, height=600)
   plot(KED_results$pred ~ KED_results$obs_precip, 
        main=title, 
        xlab="Observed", ylab="KED prediction", pch=16, col="blue")
   abline(lm(KED_results$pred ~ KED_results$obs_precip), col="red")
-  legend("topleft", paste("Correlation: ", round(corrcoef,3)))
-  par(orig_par)
-  #dev.off()
+  legend("topleft", paste("Correlation: ", round(corrcoef,3)),
+         cex=1.1, bty="n")
+  dev.off()
+}
+
+gauge_radar_scatter <- function(gauges_1day, radar, datestr) {
+  # Second scatterplot comparing gauge observations with radar values
+  gauges_1day$radar_precip <- extract(radar, gauges_1day)
+  corrcoef <- cor(gauges_1day$obs_precip, gauges_1day$radar_precip)
+  print(paste("Correlation Coefficient Gauge Observations vs Radar: ", corrcoef))
   
+  outpng <- paste0("Output/Gauge_Radar_Scatter_", datestr, ".png")
+  png(outpng, width=800, height=600)
+  title <- paste("Radar vs Observed Precipitation", datestr)
+  plot(gauges_1day$obs_precip, gauges_1day$radar_precip, 
+       main=title, 
+       xlab="Observed", ylab="Radar precip", pch=16, col="blue")
+  abline(lm(gauges_1day$obs_precip ~ gauges_1day$radar_precip), col="red")
+  legend("topleft", paste("Correlation: ", round(corrcoef,3)), 
+         cex=1.1, bty="n")
+  dev.off() 
 }

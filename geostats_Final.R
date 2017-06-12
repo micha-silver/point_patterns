@@ -25,16 +25,13 @@ cities <- shapefile('GIS/cities_de.shp')
 # Filter out only Bavaria
 cities <- subset(cities, cities$adm1_code==2)
 # List of date strings
-datestrs = c('2016-07-01', '2016-07-02',
-             '2016-07-03', '2016-07-04',
-             '2016-07-05', '2016-07-06',
-             '2016-07-07', '2016-07-08',
-             '2016-07-09', '2016-07-10',
-             '2016-07-11', '2016-07-12',
-             '2016-07-13', '2016-07-14',
-             '2016-07-15', '2016-07-16',
-             '2016-07-17', '2016-07-18',
-             '2016-07-19', '2016-07-20')
+datestrs = c('2016-06-21', '2016-06-22', '2016-06-23', '2016-06-24',
+             '2016-06-25', '2016-06-26', '2016-06-27', '2016-06-28',
+             '2016-06-29', '2016-06-30', '2016-07-01', '2016-07-02',
+             '2016-07-03', '2016-07-04', '2016-07-05', '2016-07-06',
+             '2016-07-07', '2016-07-08', '2016-07-09', '2016-07-10',
+             '2016-07-11', '2016-07-12', '2016-07-13', '2016-07-14',
+             '2016-07-15', '2016-07-16', '2016-07-17', '2016-07-18')
 
 radar_dir <- '/home/micha/Studies/Research/IMAP/Data/DE/RADOLAN/daily/'
 
@@ -155,22 +152,25 @@ grd <- prepare_krige_grid(link_data)
 # ---------------------------------
 # Begin process - one day
 # ---------------------------------
-for (i in seq(12,13)) {
+for (i in seq(22,23)) {
   datestr = datestrs[i]
   # Extract data for one day
   data_1day <- slice_data(link_data, gauge_data, datestr)
   links_1day <- data_1day$links_1day
   gauges_1day <- data_1day$gauges_1day
   # Moran's I for autocorrelation
-  Moran_I <- calculate_moran(links_1day, datestr)
+  #Moran_I <- calculate_moran(links_1day, datestr)
   
   # Create a variogram and fitted model
   vg_fit <- prepare_variogram(links_1day, datestr)  
 
   # Do Ordinary Kriging
-  perform_ok(links_1day, vg_fit, gauges_1day, grd, datestr)
+  OK_results <- perform_ok(links_1day, vg_fit, gauges_1day, grd, datestr)
+  OK_scatter(OK_results)
   
   # Do Kriging with External Drift
-  radar_file <- paste0(radar_dir,'rw_',gsub('-','',datestr), '.asc')
-  perform_ked(links_1day, gauges_1day, radar_file, grd, datestr)
+  radar <- load_radar(datestr, grd)
+  KED_results <- perform_ked(links_1day, gauges_1day, radar, grd, datestr)
+  KED_scatter(KED_results, datestr)
+  gauge_radar_scatter(gauges_1day, radar, datestr)
 }
