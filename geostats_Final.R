@@ -16,9 +16,8 @@ library(rgdal)
 # Initial setup
 # ---------------------------------
 setwd('/home/micha/Studies/Courses/Geostatistics-Tal/Project/')
+out_dir <- paste0(getwd(),'/Report/Output/')
 cml_file  <- "CML/cml_bavaria_v1.h5"
-gauge_file  <- 'gauge_data/gauge_data_daily.csv'
-gauge_meta_file <- 'gauge_data/gauge_metadata.csv'
 # Load administrative boundaries for plotting
 gadm_1 <- readRDS('GIS/DEU_adm1.rds')
 cities <- shapefile('GIS/cities_de.shp')
@@ -99,30 +98,9 @@ print(paste("Found: ",length(link_meta$link_id), "links"))
 print(paste("Aggregated: ", length(link_data$link_id),
             "rows of daily CML data"))
 
-# ---------------------------------
-# Load gauge data
-# ---------------------------------
-# Read CSV files of gauge data and metadata 
-data_cols <- c('station_id','date_time','quality',
-               'obs_precip', 'precip_ind','snow','eor')
-gauge_data <- read.csv(gauge_file, col.names=data_cols)
-meta_cols <- c('station_id','from_date','to_date','elevation',
-               'latitude','longitude',
-               'stn_name','province')
-gauge_meta <- read.csv(gauge_meta_file, col.names=meta_cols)
-
-# Join spatial data with gauge data
-gauge_data <- merge(gauge_data, gauge_meta, 
-                    by='station_id', all.x=FALSE)
-# Make sure to clean out NA or < 0 (unknown values)
-gauge_data <- na.omit(gauge_data)
-gauge_data <- filter(gauge_data, obs_precip>=0)
-print(paste("Found: ",length(gauge_meta$station_id), "gauges"))
-print(paste("Found: ", length(gauge_data$station_id),
-            "rows of daily gauge data"))
 
 # ---------------------------------
-# Make SPDF from data frames
+# Make SPDF from data frame
 # ---------------------------------
 # First SpatialPointsDataFrame from the Link data
 link_coords <- cbind(link_data$lon, link_data$lat)
@@ -130,34 +108,30 @@ coordinates(link_data) <- link_coords
 proj4string(link_data) <- proj_wgs84
 links_bbox <- link_data@bbox
 
-# also spatial points data frame of gauges
-gauge_coords <- cbind(gauge_data$longitude, gauge_data$latitude)
-coordinates(gauge_data) <- gauge_coords
-proj4string(gauge_data) <- proj_wgs84
-# and crop to links BBOX
-gauge_data <- crop(gauge_data, extent(links_bbox))
-
 # Transform all spatial data to European LAEA projection, EPSG:3035
 cities <- spTransform(cities, proj_laea)
 gadm_1 <- spTransform(gadm_1, proj_laea)
-gauge_data <- spTransform(gauge_data, proj_laea)
 link_data <- spTransform(link_data, proj_laea)
 
 # Plot inital map
-plot_map(cities, gadm_1, gauge_data, link_data)
+plot_map(cities, gadm_1, link_data)
 
 # Setup grid for kriging results
-grd <- prepare_krige_grid(link_data)
+grid_result <- prepare_krige_grid(link_data)
+grd <- grid_result$grid
+validation_points <- grid_result$validation
+
 
 # ---------------------------------
 # Begin process - one day
 # ---------------------------------
-for (i in seq(22,23)) {
+for (i in seq(2,7)) {
   datestr = datestrs[i]
   # Extract data for one day
-  data_1day <- slice_data(link_data, gauge_data, datestr)
-  links_1day <- data_1day$links_1day
-  gauges_1day <- data_1day$gauges_1day
+  links_1day <- slice_data(link_data, datestr)
+  # Get radar for extracting validation points
+  radar <- load_radar(datestr, grd)
+  
   # Moran's I for autocorrelation
   #Moran_I <- calculate_moran(links_1day, datestr)
   
@@ -165,12 +139,15 @@ for (i in seq(22,23)) {
   vg_fit <- prepare_variogram(links_1day, datestr)  
 
   # Do Ordinary Kriging
-  OK_results <- perform_ok(links_1day, vg_fit, gauges_1day, grd, datestr)
+  OK_results <- perform_ok(links_1day, vg_fit, grd, 
+                           validation_points, radar, datestr)
   OK_scatter(OK_results)
   
   # Do Kriging with External Drift
-  radar <- load_radar(datestr, grd)
-  KED_results <- perform_ked(links_1day, gauges_1day, radar, grd, datestr)
+  
+  KED_results <- perform_ked(links_1day, grd, radar,
+                             validation_points, datestr)
   KED_scatter(KED_results, datestr)
-  gauge_radar_scatter(gauges_1day, radar, datestr)
+  check_KED(links_1day, radar)
+  
 }
