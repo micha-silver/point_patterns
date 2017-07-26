@@ -15,6 +15,8 @@ library(rgdal)
 # ---------------------------------
 # Initial setup
 # ---------------------------------
+cat("\n============================\n")
+print("Initial Setup")
 setwd('/home/micha/Studies/Courses/Geostatistics-Tal/Project/')
 out_dir <- paste0(getwd(),'/Report/Output/')
 cml_file  <- "CML/cml_bavaria_v1.h5"
@@ -130,6 +132,8 @@ validation_points <- grid_result$validation
 # ---------------------------------
 for (i in c(5,6,22,23,24,35)) {
   datestr = datestrs[i]
+  cat("\n============================\n")
+  print(paste("Starting Process for date:", datestr))
   # Extract data for one day
   links_1day <- slice_data(link_data, datestr)
   # Get radar for extracting validation points

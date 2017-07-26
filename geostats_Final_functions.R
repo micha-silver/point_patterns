@@ -104,10 +104,6 @@ prepare_variogram <- function(links_1day, datestr) {
   # Guess at range and sill
   vg_fit_man <- fit.variogram(vg, 
                               vgm(psill=0.5,c('Exp','Sph','Gau'),range=20000))
-  # vg_fit_sph <- fit.variogram(vg, 
-  #                             vgm(psill=100,'Sph',range=1.0))
-  # vg_fit_gau <- fit.variogram(vg, 
-  #                             vgm(psill=100,'Gau',range=1.0))
   # Run autofit function from automap
   vg_fit_auto <- autofitVariogram(rain_rate~1, 
                              input_data=links_1day,
@@ -232,9 +228,9 @@ perform_ok <- function(links_1day, vg_fit, grd,
 
 
 OK_scatter <- function(radar, OK_result) {
-  corrcoef <- cor(OK_result$OK_pred,
-                  OK_result$radar_precip, 
-                  use='complete')
+  pred <- OK_result$OK_pred
+  radar <- OK_result$radar_precip
+  corrcoef <- cor(pred, radar, use='complete')
   print(paste("Correlation Coefficient Radar vs OK: ", corrcoef))
 
   outpng <- paste0(out_dir, 
@@ -242,9 +238,9 @@ OK_scatter <- function(radar, OK_result) {
                    links_1day$date_time[1], ".png")
   png(outpng, width=800, height=600)
   title <- paste("Scatterplot, Radar vs OK: ", datestr)
-  plot(OK_result$OK_pred ~ OK_result$radar_precip, main=title, 
+  plot(pred ~ radar, main=title, 
        ylab="Radar precip", xlab="OK prediction", pch=16, col="blue")
-  abline(lm(OK_pred~radar_precip), col="red")
+  abline(lm(pred ~ radar), col="red")
   legend("topleft", paste("Correlation: ", round(corrcoef,3)),
          cex=1.1, bty="n")
   
