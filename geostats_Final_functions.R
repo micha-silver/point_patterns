@@ -74,7 +74,7 @@ calculate_moran <- function(links_1day, datestr) {
   sd2 <- 1.96 * sd(Moran_I_mc$res)
   
   # Create Histogram plot
-  outpng <- paste0(out_dir, 'Morans_histogram.png')
+  outpng <- paste0(out_dir, 'MoransI_hist_',datestr,'.png')
   png(outpng, width=800, height=800)
   title <- paste("Moran's I - Distribution of Monte Carlo Simulations", datestr)
   hist(Moran_I_mc$res, xlab="Monte Carlo runs of Moran's I", 
@@ -154,6 +154,20 @@ prepare_krige_grid <- function(link_data) {
   
   # And choose 400 random validation points
   validation_points <- spsample(grd, 400, 'random')
+  # Plot validation points
+  outpng <- paste0(out_dir, "Validation_points", ".png")
+  title <- "Validation Points"
+  png(outpng, width=800, height=600)
+  plot(link_data, col="pink", pch=10, cex=0.8) 
+  points(validation_points, col="blue", bg="blue", 
+         pch=25, cex=1.2)
+  plot(gadm_1, border='black', lwd=1, add=TRUE)
+  lclrs <- c('blue','pink')
+  lgnd <- c('Validation locations', 'CML links')
+  legend('bottomright', col=lclrs, legend=lgnd, 
+         lwd=2, cex=1.0, pch=c(25, 10), lty=NA)
+  dev.off()
+  
   return(c("grid"=grd, "validation"=validation_points))
 }
 
@@ -197,12 +211,10 @@ perform_ok <- function(links_1day, vg_fit, grd,
   title <- paste("Ordinary Kriging Interpolation ", datestr)
   outpng <- paste0(out_dir, "OK_interp_", links_1day$date_time[1], ".png")
   png(outpng, width=800, height=600)
-  orig_par <- par()
-  
+
   plot(OK_grid, col=clrs, main=title)
   plot(links_1day, col="red", pch=18, cex=1.2, add=T)
   plot(gadm_1, border='black', lwd=1, add=T)
-  par(orig_par)
   dev.off()
   
   # Kriging at validation locations
@@ -212,26 +224,30 @@ perform_ok <- function(links_1day, vg_fit, grd,
   
   # Extract radar values at validation points and merge with OK result
   validation_precip <- extract(radar, validation_points)
-  OK_results <- cbind(OK_validation$var1.pred, validation_precip)
-  colnames(OK_results) <- c('OK_pred', 'radar_precip')
-  OK_results <- as.data.frame(OK_results)
-  return(OK_results)
+  OK_result <- cbind(OK_validation$var1.pred, validation_precip)
+  colnames(OK_result) <- c('OK_pred', 'radar_precip')
+  OK_result <- as.data.frame(OK_result)
+  return(OK_result)
 }
 
 
-OK_scatter <- function(OK_results) {
-  corrcoef <- cor(OK_results$OK_pred, 
-                  OK_results$radar_precip, use='complete')
+OK_scatter <- function(radar, OK_result) {
+  corrcoef <- cor(OK_result$OK_pred,
+                  OK_result$radar_precip, 
+                  use='complete')
   print(paste("Correlation Coefficient Radar vs OK: ", corrcoef))
 
-  outpng <- paste0(out_dir, "OK_Scatter_", links_1day$date_time[1], ".png")
-  title <- paste("OK vs Radar Precipitation ", datestr)
+  outpng <- paste0(out_dir, 
+                   "Scatterplot_", 
+                   links_1day$date_time[1], ".png")
   png(outpng, width=800, height=600)
-  plot(OK_results$OK_pred~OK_results$radar_precip, main=title, 
-       xlab="Radar precip", ylab="OK prediction", pch=16, col="blue")
-  abline(lm(OK_results$OK_pred~OK_results$radar_precip), col="red")
+  title <- paste("Scatterplot, Radar vs OK: ", datestr)
+  plot(OK_result$OK_pred ~ OK_result$radar_precip, main=title, 
+       ylab="Radar precip", xlab="OK prediction", pch=16, col="blue")
+  abline(lm(OK_pred~radar_precip), col="red")
   legend("topleft", paste("Correlation: ", round(corrcoef,3)),
          cex=1.1, bty="n")
+  
   dev.off()
 }
   
@@ -328,14 +344,15 @@ check_KED <- function(links_1day, radar) {
   links_1day$radar_values <- extract(radar, links_1day)
   # Check correlation of radar (independant) to links
   # Pearson NOT suitable since the distributions of rainrall are not Gaussian
+  
+  outpng <- paste0(out_dir,"Histogram_plots_", links_1day$date_time[1],".png")
+  png(outpng, width=800, height=600)
   par(mfrow=c(1,2))
-  outpng <- paste0(out_dir,"Histograms_", links_1day$date_time[1],".png")
-#  png(outpng, width=800, height=600)
   hist(links_1day$radar_values, main="Histogram of Radar Precipitation", 
        breaks=30, col="green", xlab="radar_precip")  
   hist(links_1day$rain_rate, main="Histogram of Link Rain Rates", 
        breaks=30, col="blue", xlab="link rain_rates") 
-#  dev.off()
+  dev.off()
   
   #link_radar_pearson <- cor.test(links_1day$rain_rate, 
   #                                  links_1day$radar_values, 
