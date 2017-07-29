@@ -227,23 +227,23 @@ perform_ok <- function(links_1day, vg_fit, grd,
 }
 
 
-OK_scatter <- function(radar, OK_result) {
+OK_scatter <- function(OK_result) {
   pred <- OK_result$OK_pred
-  radar <- OK_result$radar_precip
-  corrcoef <- cor(pred, radar, use='complete')
+  radar <- OK_result$radar
+  corrcoef <- cor(pred, radar, use='complete', method='spearman')
   print(paste("Correlation Coefficient Radar vs OK: ", corrcoef))
 
+  #Plot scatterplots of predicted vs radar
   outpng <- paste0(out_dir, 
                    "Scatterplot_", 
                    links_1day$date_time[1], ".png")
   png(outpng, width=800, height=600)
   title <- paste("Scatterplot, Radar vs OK: ", datestr)
   plot(pred ~ radar, main=title, 
-       ylab="Radar precip", xlab="OK prediction", pch=16, col="blue")
+       xlab="Radar precip", ylab="OK prediction", pch=16, col="blue")
   abline(lm(pred ~ radar), col="red")
   legend("topleft", paste("Correlation: ", round(corrcoef,3)),
          cex=1.1, bty="n")
-  
   dev.off()
 }
   
@@ -357,6 +357,6 @@ check_KED <- function(links_1day, radar) {
   link_radar_spearman <- cor.test(links_1day$rain_rate, 
                                   links_1day$radar_values,
                                   method='spearman', exact=FALSE)
-  print(link_radar_spearman)
+  #print(link_radar_spearman)
   
 }

@@ -35,7 +35,7 @@ datestrs = c('2016-06-21', '2016-06-22', '2016-06-23', '2016-06-24',
              '2016-07-15', '2016-07-16', '2016-07-17', '2016-07-18',
              '2016-07-19', '2016-07-20', '2016-07-21', '2016-07-22',
              '2016-07-23', '2016-07-24', '2016-07-25', '2016-07-26',
-             '2016-07-27', '2016-07-28', '2016-07-29', '2016-07-20')
+             '2016-07-27', '2016-07-28', '2016-07-29', '2016-07-30')
 
 radar_dir <- '/home/micha/Studies/Research/IMAP/Data/DE/RADOLAN/daily/'
 
@@ -128,8 +128,9 @@ validation_points <- grid_result$validation
 
 
 # ---------------------------------
-# Begin process - one day
+# Begin process - loop through dates 
 # ---------------------------------
+#for (i in c(4,21,36)) {
 for (i in c(5,6,22,23,24,35)) {
   datestr = datestrs[i]
   cat("\n============================\n")
@@ -140,7 +141,7 @@ for (i in c(5,6,22,23,24,35)) {
   radar <- load_radar(datestr, grd)
   
   # Moran's I for autocorrelation
-  Moran_I <- calculate_moran(links_1day, datestr)
+  #Moran_I <- calculate_moran(links_1day, datestr)
   
   # Create a variogram and fitted model
   vg_fit <- prepare_variogram(links_1day, datestr)  
@@ -149,7 +150,7 @@ for (i in c(5,6,22,23,24,35)) {
   OK_result <- perform_ok(links_1day, vg_fit, grd, 
                            validation_points, radar, datestr)
   # Produce plots
-  OK_scatter(radar, OK_result )
+  OK_scatter(OK_result)
   
   # Do Kriging with External Drift
   KED_results <- perform_ked(links_1day, grd, radar,
